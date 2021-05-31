@@ -6,7 +6,10 @@ function gameOfLife(cells, generations) {
   let solutionCells = [...cells.map((e) => [...e])];
 
   for (let generation = 0; generation < generations; generation++) {
-    solutionCells = contractGenerationAroundLivingCells(calculateNewGeneration(expandGeneration(solutionCells)));
+    solutionCells = apply(
+      [expandGeneration, calculateNewGeneration, contractGenerationAroundLivingCells],
+      solutionCells
+    );
   }
 
   return solutionCells;
@@ -24,18 +27,20 @@ function calculateNewGeneration(cells) {
 
 function isAlive(cells, x, y) {
   const alive = !!cells[y][x];
-  const aliveNeighbours = sumOfNeighbours(cells, x, y);
+  const aliveNeighbours = numberOfAliveNeighbours(cells, x, y);
   if (alive && (aliveNeighbours === 2 || aliveNeighbours === 3)) return true;
   if (!alive && aliveNeighbours === 3) return true;
   return false;
 }
 
-function sumOfNeighbours(cells, xCoord, yCoord) {
+function numberOfAliveNeighbours(cells, xCoord, yCoord) {
+  function isOutOfBounds(cells, x, y) {
+    return y < 0 || y >= cells.length || x < 0 || x >= cells[y].length;
+  }
   let sum = 0;
   for (let y = yCoord - 1; y <= yCoord + 1; y++) {
     for (let x = xCoord - 1; x <= xCoord + 1; x++) {
-      if (x === xCoord && y === yCoord) continue;
-      if (y < 0 || y >= cells.length || x < 0 || x >= cells[y].length) continue;
+      if ((x === xCoord && y === yCoord) || isOutOfBounds(cells, x, y)) continue;
       sum = !!cells[y][x] ? sum + 1 : sum;
     }
   }
@@ -56,17 +61,21 @@ function expandGeneration(cells) {
 
 function contractGenerationAroundLivingCells(cells) {
   let contractedCells = [...cells.map((e) => [...e])];
-  while (contractedCells[0].every((e) => !e)) {
+  while (contractedCells.length > 0 && contractedCells[0].every((e) => !e)) {
     contractedCells.shift();
   }
-  while (contractedCells[contractedCells.length - 1].every((e) => !e)) {
+  while (contractedCells.length > 0 && contractedCells[contractedCells.length - 1].every((e) => !e)) {
     contractedCells.pop();
   }
-  while (contractedCells.every((e) => !e[0])) {
+  while (contractedCells[0].length > 0 && contractedCells.every((e) => !e[0])) {
     contractedCells.forEach((e) => e.shift());
   }
-  while (contractedCells.every((e) => !e[e.length - 1])) {
+  while (contractedCells[contractedCells.length - 1].length > 0 && contractedCells.every((e) => !e[e.length - 1])) {
     contractedCells.forEach((e) => e.pop());
   }
   return contractedCells;
+}
+
+function apply(functions, acc) {
+  return functions.reduce((result, func) => func(result), acc);
 }
