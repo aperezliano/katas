@@ -3,6 +3,10 @@ module.exports = gameOfLife;
 function gameOfLife(cells, generations) {
   if (generations === 0) return [[]];
 
+  function apply(functions, acc) {
+    return functions.reduce((result, func) => func(result), acc);
+  }
+
   let solutionCells = [...cells.map((e) => [...e])];
 
   for (let generation = 0; generation < generations; generation++) {
@@ -74,8 +78,4 @@ function contractGenerationAroundLivingCells(cells) {
     contractedCells.forEach((e) => e.pop());
   }
   return contractedCells;
-}
-
-function apply(functions, acc) {
-  return functions.reduce((result, func) => func(result), acc);
 }
