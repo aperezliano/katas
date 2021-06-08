@@ -1,14 +1,19 @@
 module.exports = triangle;
 
 function triangle(row) {
-  let solution = [...row];
-  while (solution.length > 1) {
-    solution = solution.reduce((acc, e, i) => {
-      if (i === solution.length - 1) return acc;
-      return acc.concat([getMerge(e, solution[i + 1])]);
-    }, []);
+  let currentRow = [...row];
+  while (currentRow.length > 1) {
+    const nextRow = [];
+
+    for (let i = 1; i < currentRow.length; i++) {
+      const mergedColor = getMerge(currentRow[i - 1], currentRow[i]);
+      if (mergedColor !== nextRow[i - 1]) {
+        nextRow.push(mergedColor);
+      }
+    }
+    currentRow = [...nextRow];
   }
-  return solution[0];
+  return currentRow[0];
 }
 
 function getMerge(...params) {
