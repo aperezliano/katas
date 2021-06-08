@@ -1,24 +1,24 @@
-const longestSlideDown = require("../index");
+const longestSlideDown = require('../index');
 
-it("works for an empty pyramid", () => {
+it('works for an empty pyramid', () => {
   expect(longestSlideDown([])).toBe(null);
 });
 
-it("works for a tiny pyramid", () => {
+it('works for a tiny pyramid', () => {
   expect(longestSlideDown([[1], [2, 3]])).toBe(4);
 });
 
-it("works for a small pyramid 1", () => {
+it('works for a small pyramid 1', () => {
   expect(longestSlideDown([[3], [7, 4], [2, 4, 6], [8, 5, 9, 3]])).toBe(23);
 });
 
-it("works for a small pyramid 2", () => {
+it('works for a small pyramid 2', () => {
   expect(
     longestSlideDown([[11], [12, 13], [14, 15, 16], [90, 18, 19, 20]])
   ).toBe(127);
 });
 
-it("works for a medium pyramid", () => {
+it('works for a medium pyramid', () => {
   expect(
     longestSlideDown([
       [75],
