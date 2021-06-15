@@ -7,6 +7,7 @@ function equalTo24(a, b, c, d) {
   return solution ? solution : "It's not possible!";
 }
 
+// TODO: Parenthesis not optimized
 function equalTo24Rec(numbers) {
   if (numbers.length === 2) {
     const combinations = getCombinations(numbers[0], numbers[1]);
