@@ -1,14 +1,17 @@
 module.exports = equalTo24;
 
 function equalTo24(a, b, c, d) {
-  return equalTo24Rec([a, b, c, d]);
+  const solution = equalTo24Rec(
+    [a, b, c, d].map((e) => ({ value: e, expression: `${e}` }))
+  );
+  return solution ? solution : "It's not possible!";
 }
 
-function equalTo24Rec(numbers, result = '') {
+function equalTo24Rec(numbers) {
   if (numbers.length === 2) {
     const combinations = getCombinations(numbers[0], numbers[1]);
-    const [_, expression] = combinations.find((e) => e[0] === 24) || [];
-    return expression ? true : false;
+    const result = combinations.find((e) => e.value === 24);
+    return result ? result.expression : false;
   }
 
   const pairs = getPairs(numbers);
@@ -16,11 +19,14 @@ function equalTo24Rec(numbers, result = '') {
   for (let pair of pairs) {
     const combinations = getCombinations(...pair);
 
-    for (let [combination, expression] of combinations) {
+    for (let combination of combinations) {
       const newNumbers = numbers
-        .filter((e) => isFinite(e) && !pair.includes(e))
+        .filter(
+          (e, i) =>
+            isFinite(e.value) && !pair.map((e) => e.position).includes(i)
+        )
         .concat([combination]);
-      const result = equalTo24Rec(newNumbers, expression);
+      const result = equalTo24Rec(newNumbers);
 
       if (result) return result;
     }
@@ -29,12 +35,14 @@ function equalTo24Rec(numbers, result = '') {
   return false;
 }
 
-function getPairs(digits) {
-  const numbers = digits.filter((e) => isFinite(e));
+function getPairs(numbers) {
   let pairs = [];
   for (let i = 0; i < numbers.length - 1; i++) {
     for (let j = i + 1; j < numbers.length; j++) {
-      pairs.push([numbers[i], numbers[j]]);
+      pairs.push([
+        { ...numbers[i], position: i },
+        { ...numbers[j], position: j },
+      ]);
     }
   }
   return pairs;
@@ -42,19 +50,37 @@ function getPairs(digits) {
 
 function getCombinations(a, b) {
   const combinations = [
-    [a * b, `${a}*${b}`],
-    [a + b, `${a}+${b}`],
+    {
+      value: a.value * b.value,
+      expression: `(${a.expression}*${b.expression})`,
+    },
+    {
+      value: a.value + b.value,
+      expression: `(${a.expression}+${b.expression})`,
+    },
   ];
-  if (a > b) {
-    combinations.push([a - b, `${a}-${b}`]);
+  if (a.value > b.value) {
+    combinations.push({
+      value: a.value - b.value,
+      expression: `(${a.expression}-${b.expression})`,
+    });
   } else {
-    combinations.push([b - a, `${b}-${a}`]);
+    combinations.push({
+      value: b.value - a.value,
+      expression: `(${b.expression}-${a.expression})`,
+    });
   }
   if (b !== 0) {
-    combinations.push([a / b, `${a}/${b}`]);
+    combinations.push({
+      value: a.value / b.value,
+      expression: `(${a.expression}/${b.expression})`,
+    });
   }
   if (a !== 0) {
-    combinations.push([b / a, `${b}/${a}`]);
+    combinations.push({
+      value: b.value / a.value,
+      expression: `(${b.expression}/${a.expression})`,
+    });
   }
   return combinations;
 }
