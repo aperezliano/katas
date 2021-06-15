@@ -22,10 +22,7 @@ function equalTo24Rec(numbers) {
 
     for (let combination of combinations) {
       const newNumbers = numbers
-        .filter(
-          (e, i) =>
-            isFinite(e.value) && !pair.map((e) => e.position).includes(i)
-        )
+        .filter((_, i) => !pair.map((e) => e.position).includes(i))
         .concat([combination]);
       const result = equalTo24Rec(newNumbers);
 
