@@ -10,8 +10,9 @@ class CacheLRU {
 
   getData(data) {
     if (this.entries.has(data)) {
-      this.list.moveNodeToHead(this.entries.get(data));
-      return this.entries.get(data);
+      const dataNode = this.entries.get(data);
+      this.list.moveNodeToHead(dataNode);
+      return dataNode;
     }
     if (this.list.length < this.size) {
       this.list.append(data);

@@ -29,8 +29,7 @@ class DoubleLinkedList {
       this.tail.prev.next = null;
       this.tail = this.tail.prev;
     } else {
-      this.tail = null;
-      this.head = null;
+      this.tail = this.head = null;
     }
     return tail;
   }
