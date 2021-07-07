@@ -45,10 +45,7 @@ class DoubleLinkedList {
     const nextNode = node.next;
     if (prevNode) prevNode.next = nextNode;
     if (nextNode) nextNode.prev = prevNode;
-    node.next = node.prev = null;
-    node.next = this.head;
-    this.head.prev = node;
-    this.head = node;
+    node = this.append(node);
   }
 }
 
