@@ -1,204 +1,5 @@
 module.exports = getCommands;
 
-/**
- *
- * @param {string} field
- * @param {number} power
- * @returns {string[]}
- */
-function getCommands(field, power) {
-  const fieldArray = getFieldArray(field);
-  const startingCell = getStartingCell(fieldArray);
-  if (!startingCell) return [];
-
-  startingCell.visited = true;
-  startingCell.orientation = Orientation.UP;
-  startingCell.cost = 0;
-  const queue = [startingCell];
-
-  while (queue.length > 0) {
-    const cell = popMinVertex(queue);
-    cell.visited = true;
-    if (cell.type === Fields.TARGET && cell.cost <= power) return cell.moves;
-    const updatedCells = updateNeighbourCells(fieldArray, cell, power);
-    queue.push(...updatedCells);
-  }
-
-  return [];
-}
-
-/**
- *
- * @param {[Cell[]]} cells
- * @param {Cell} cell
- * @param {number} addedCost
- * @param {number} orientation
- * @param {[number, number]} coords
- * @param {[string]} moves
- */
-function updateCell(cells, cell, addedCost, orientation, coords, moves, power) {
-  const [x, y] = coords;
-  if (y < 0 || y >= cells.length || x < 0 || x >= cells.length) return null;
-
-  const cellToUpdate = cells[y][x];
-  if (cellToUpdate.visited || cellToUpdate.type === Fields.BLOCKED) return null;
-  if (
-    cellToUpdate.cost < cell.cost + addedCost ||
-    power < cell.cost + addedCost
-  )
-    return null;
-
-  cellToUpdate.orientation = orientation;
-  cellToUpdate.cost = cell.cost + addedCost;
-  cellToUpdate.moves = [...cell.moves, ...moves];
-  return cellToUpdate;
-}
-
-/**
- *
- * @param {Cell[]} cells
- * @param {Cell} cell
- * @returns {Cell[]}
- */
-function updateNeighbourCells(cells, cell, power) {
-  const [x, y] = [cell.x, cell.y];
-  let frontCoords = [];
-  let rightCoords = [];
-  let leftCoords = [];
-  let leftOrientation;
-  let rightOrientation;
-  switch (cell.orientation) {
-    case Orientation.UP:
-      frontCoords = [x, y - 1];
-      rightCoords = [x + 1, y];
-      leftCoords = [x - 1, y];
-      rightOrientation = Orientation.RIGHT;
-      leftOrientation = Orientation.LEFT;
-      break;
-    case Orientation.RIGHT:
-      frontCoords = [x + 1, y];
-      rightCoords = [x, y + 1];
-      leftCoords = [x, y - 1];
-      rightOrientation = Orientation.DOWN;
-      leftOrientation = Orientation.UP;
-      break;
-    case Orientation.DOWN:
-      frontCoords = [x, y + 1];
-      rightCoords = [x - 1, y];
-      leftCoords = [x + 1, y];
-      rightOrientation = Orientation.LEFT;
-      leftOrientation = Orientation.RIGHT;
-      break;
-    case Orientation.LEFT:
-      frontCoords = [x - 1, y];
-      rightCoords = [x, y - 1];
-      leftCoords = [x, y + 1];
-      rightOrientation = Orientation.UP;
-      leftOrientation = Orientation.DOWN;
-      break;
-  }
-  const updatedFrontCell = updateCell(
-    cells,
-    cell,
-    1,
-    cell.orientation,
-    frontCoords,
-    ['f'],
-    power
-  );
-  const updatedRightCell = updateCell(
-    cells,
-    cell,
-    2,
-    rightOrientation,
-    rightCoords,
-    ['r', 'f'],
-    power
-  );
-  const updatedLeftCell = updateCell(
-    cells,
-    cell,
-    2,
-    leftOrientation,
-    leftCoords,
-    ['l', 'f'],
-    power
-  );
-
-  const updatedCells = [];
-  updatedCells.push(
-    ...[updatedFrontCell, updatedRightCell, updatedLeftCell].filter((e) => !!e)
-  );
-
-  return updatedCells;
-}
-
-/**
- *
- * @param {Cell[]} cells
- * @returns {Cell}
- */
-function popMinVertex(cells) {
-  let min = Infinity;
-  let index = -1;
-  for (let i = 0; i < cells.length; i++) {
-    if (cells[i].cost < min) {
-      index = i;
-      min = cells[i].cost;
-    }
-  }
-  return cells.splice(index, 1)[0];
-}
-
-/**
- *
- * @param {[Cell[]]} fieldArray
- * @returns {Cell?}
- */
-function getStartingCell(fieldArray) {
-  for (let y = 0; y < fieldArray.length; y++) {
-    let startingCell = fieldArray[y].find((cell) => cell.type === Fields.START);
-    if (startingCell) return startingCell;
-  }
-  return null;
-}
-
-/**
- *
- * @param {string} field
- * @returns [Cell[]]
- */
-function getFieldArray(field) {
-  const fieldSize = Math.sqrt(field.length);
-  const fieldArray = [...field];
-
-  let y = 0;
-  while (fieldArray.length > fieldSize) {
-    fieldArray.push(
-      fieldArray.splice(0, fieldSize).map((e, x) => new Cell(e, x, y))
-    );
-    y++;
-  }
-  return fieldArray;
-}
-
-/**
- *
- * @param {any} type
- * @param {number} x
- * @param {number} y
- */
-function Cell(type, x, y) {
-  this.type = type;
-  this.orientation = null;
-  this.visited = false;
-  this.moves = [];
-  this.x = x;
-  this.y = y;
-  this.cost = Infinity;
-  this.orientation = null;
-}
-
 const Fields = {
   WALKABLE: '.', // Robby may walk on this
   BLOCKED: '#', // Robby must not walk on this
@@ -206,9 +7,157 @@ const Fields = {
   TARGET: 'T', // The target cell, Robby has to reach
 };
 
-const Orientation = {
-  UP: 0,
-  RIGHT: 1,
-  DOWN: 2,
-  LEFT: 3,
+const Orientations = ['n', 'e', 's', 'w'];
+
+const isInRange = ([x, y], field) =>
+  y >= 0 && y < field.length && x >= 0 && x < field.length;
+const isTarget = ([x, y], field) => field[y][x] === Fields.TARGET;
+const isBlocked = ([x, y], field) => field[y][x] === Fields.BLOCKED;
+
+function getNextPoint(orientation, x, y) {
+  switch (orientation) {
+    case 'n':
+      return [x, y - 1];
+    case 'e':
+      return [x + 1, y];
+    case 's':
+      return [x, y + 1];
+    default:
+      return [x - 1, y];
+  }
+}
+
+function turnRight(currentCell) {
+  const newOrientation =
+    Orientations[(Orientations.indexOf(currentCell.orientation) + 1) % 4];
+  return new Cell(
+    new Coords(currentCell.x, currentCell.y),
+    newOrientation,
+    currentCell.power - 1,
+    [...currentCell.moves, 'r']
+  );
+}
+
+function turnLeft(currentCell) {
+  const newOrientation =
+    Orientations[(Orientations.indexOf(currentCell.orientation) + 3) % 4];
+  return new Cell(
+    new Coords(currentCell.x, currentCell.y),
+    newOrientation,
+    currentCell.power - 1,
+    [...currentCell.moves, 'l']
+  );
+}
+
+function tryMoveForward(currentCell, field) {
+  const nextPoint = getNextPoint(
+    currentCell.orientation,
+    currentCell.x,
+    currentCell.y
+  );
+  if (!isInRange(nextPoint, field) || isBlocked(nextPoint, field)) return [];
+
+  return [
+    new Cell(
+      new Coords(...nextPoint),
+      currentCell.orientation,
+      currentCell.power - 1,
+      [...currentCell.moves, 'f']
+    ),
+  ];
+}
+
+function getNextCells(currentCell, field) {
+  return currentCell.power > 0
+    ? [
+        turnRight(currentCell),
+        turnLeft(currentCell),
+        ...tryMoveForward(currentCell, field),
+      ]
+    : [];
+}
+
+function getCommands(field, power) {
+  const fieldArray = getFieldArray(field);
+  const start = getStart(fieldArray, power);
+  const queue = [start];
+  const known = new Set();
+  known.add(start.toString());
+  while (queue.length > 0) {
+    const cell = popMaxPowerVertex(queue);
+    if (isTarget([cell.x, cell.y], fieldArray)) return cell.moves;
+    const nextCells = getNextCells(cell, fieldArray).filter(
+      (c) => !known.has(c.toString())
+    );
+    queue.push(...nextCells);
+    nextCells.forEach((c) => known.add(c.toString()));
+  }
+  return [];
+}
+
+/**
+ *
+ * @param {Cell[][]} fieldArray
+ * @param {number} power
+ * @returns {Cell?}
+ */
+function getStart(fieldArray, power) {
+  for (let y = 0; y < fieldArray.length; y++) {
+    let x = fieldArray[y].findIndex((cell) => cell === Fields.START);
+    if (x > -1) return new Cell(new Coords(x, y), Orientations[0], power);
+  }
+  return null;
+}
+
+/**
+ *
+ * @param {string} field
+ * @returns {string[][]}
+ */
+function getFieldArray(field) {
+  const fieldSize = Math.sqrt(field.length);
+  const fieldArray = [...field];
+
+  let y = 0;
+  while (fieldArray.length > fieldSize) {
+    fieldArray.push(fieldArray.splice(0, fieldSize).map((e) => e));
+    y++;
+  }
+  return fieldArray;
+}
+
+/**
+ *
+ * @param {Coords} coords
+ * @param {string} orientation
+ * @param {number} power
+ * @param {string[]} moves
+ */
+function Cell({ x, y }, orientation, power = 0, moves = []) {
+  this.orientation = orientation;
+  this.x = x;
+  this.y = y;
+  this.moves = moves;
+  this.power = power;
+}
+
+Cell.prototype.toString = function toString() {
+  return `${this.x},${this.y},${this.orientation}`;
 };
+
+function Coords(x, y) {
+  this.x = x;
+  this.y = y;
+}
+
+function popMaxPowerVertex(queue) {
+  let max = -Infinity;
+  let index = -1;
+  for (let i = 0; i < queue.length; i++) {
+    if (queue[i].power > max) {
+      index = i;
+      max = queue[i].power;
+    }
+  }
+  return queue.splice(index, 1)[0];
+}
